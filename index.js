@@ -120,12 +120,80 @@ function updateLayout(e, viewName, applyStyle) {
 
 function captureBorderDimensions(style, defaultWidth, defaultHeight){
   let border, width = defaultWidth || 0, height = defaultHeight || 0;
-    
+  let len;
+
   if('border' in style){
     border = style.border.match(pxRegex);
     width = border[0] * 2;
     height = border[0] * 2;
+  } else if('borderTop' in style || 
+    'borderBottom' in style) {
+    height = 0;
+    if('borderTop' in style) {
+      border = style.borderTop.match(pxRegex);
+      height += border[0];
+    }
+    if('borderBottom' in style) {
+      border = style.borderBottom.match(pxRegex);
+      height += border[0];      
+    }
+  } else if('borderRight' in style || 
+    'borderLeft' in style) {
+    width = 0;
+    if('borderRight' in style) {
+      border = style.borderRight.match(pxRegex);
+      width += border[0];
+    }
+    if('borderLeft' in style) {
+      border = style.borderLeft.match(pxRegex);
+      width += border[0];
+    }
+  } else if('borderWidth' in style){
+    border = style.borderWidth.match(pxRegex);
+    len = border.length;
+    if(len === 1){
+      width = border[0] * 2;
+      height = border[0] * 2;
+    }
+    if(len === 2){
+      width = border[1] * 2;
+      height = border[0] * 2;      
+    }
+    if(len === 3){
+      width = border[1] * 2;
+      height = border[0] * border[2];            
+    }
+    if(len === 4){
+      width = border[1] * border[4];
+      height = border[0] * border[2];      
+    }
+  } else if('borderTopWidth' in style || 
+    'borderBottomWidth' in style) {
+    height = 0;
+    if('borderTopWidth' in style) {
+      border = style.borderTopWidth.match(pxRegex);
+      height += border[0];
+    }
+    if('borderBottomWidth' in style) {
+      border = style.borderBottomWidth.match(pxRegex);
+      height += border[0];      
+    }
+  } else if('borderRightWidth' in style || 
+    'borderLeftWidth' in style) {
+    width = 0;
+    if('borderRightWidth' in style) {
+      border = style.borderRightWidth.match(pxRegex);
+      width += border[0];
+    }
+    if('borderLeftWidth' in style) {
+      border = style.borderLeftWidth.match(pxRegex);
+      width += border[0];
+    }
   }
+
+
+
+
   return { width, height };
 }
 
