@@ -37,9 +37,12 @@ function updateContraints(viewConfig, current) {
   let height;
   let top;
   let left;
-  let constrainTo = viewConfig.layouts[current.format].constrainTo.split('.');
+  let constrainTo = viewConfig.layouts[current.format].constrainTo;
+  let constrainToIsFixed = viewConfig.layouts[current.format].constrainToIsFixed;
 
-  if(viewConfig.layouts[current.format].constrainTo[0] == 'viewport' || !(constrainTo[0] in constraints)){
+  if(constrainToIsFixed){
+    viewConfig.view.setSize(constrainTo[0], constrainTo[1]);
+  } else if(viewConfig.layouts[current.format].constrainTo[0] == 'viewport' || !(constrainTo[0] in constraints)){
     viewConfig.view.setSize(window.innerWidth, window.innerHeight);
   } else {
     
@@ -55,7 +58,7 @@ function updateContraints(viewConfig, current) {
       current.format in borders[constrainToViewName][constrainToViewKey].format){
       
       borderWidth = borders[constrainToViewName][constrainToViewKey].format[current.format].borderWidth;
-      borderHeight = borders[constrainToViewName][constrainToViewKey].format[current.format].borderHeight;      
+      borderHeight = borders[constrainToViewName][constrainToViewKey].format[current.format].borderHeight;
     }
     
     viewConfig.view.setSize(style.width - borderWidth, style.height - borderHeight);
@@ -190,14 +193,10 @@ function captureBorderDimensions(style, defaultWidth, defaultHeight){
       width += border[0];
     }
   }
-
-
-
-
   return { width, height };
 }
 
-function addVisualFormat(component, vfDescriptor){
+function addVisualFormat(component, descriptor){
   let viewName = component.props.name;
   let current;
 
@@ -241,19 +240,28 @@ function addVisualFormat(component, vfDescriptor){
   };
 
   config[viewName] = {};
-  config[viewName].query = vfDescriptor.query;
-  config[viewName].layouts = vfDescriptor.layouts;
+  config[viewName].layouts = {};
+  config[viewName].query = descriptor.query;
   config[viewName].viewName = viewName;
   config[viewName].view = new AutoLayout.View();
 
-  current = vfDescriptor.query(constraints);
+  current = descriptor.query(constraints);
   config[viewName].currentFormat = current.format;  
 
-  for(let k in vfDescriptor.layouts){
-    if(vfDescriptor.layouts.hasOwnProperty(k)){
-      config[viewName].layouts[k].constraints = AutoLayout.VisualFormat.parse(vfDescriptor.layouts[k].format, {extended: true});
+  for (let i = 0, len = descriptor.layouts.length; i < len; i++) {
+    let layout = descriptor.layouts[i];
+    config[viewName].layouts[layout.name] = {};
+    config[viewName].layouts[layout.name].htmlTag = layout.htmlTag;
+    if(Object.prototype.toString.call(layout.constrainTo) === '[object Array]'){
+      config[viewName].layouts[layout.name].constrainToIsFixed = true;
+      config[viewName].layouts[layout.name].constrainTo = layout.constrainTo;
+    } else {
+      //assume it is a string
+      config[viewName].layouts[layout.name].constrainToIsFixed = false;
+      config[viewName].layouts[layout.name].constrainTo = layout.constrainTo.split('.');
     }
-  }
+    config[viewName].layouts[layout.name].constraints = AutoLayout.VisualFormat.parse(layout.format, {extended: true});
+  };
 
   config[viewName].view.addConstraints(config[viewName].layouts[current.format].constraints);
   constraints = merge(constraints, updateContraints(config[viewName], current));
@@ -285,6 +293,10 @@ function removeVisualFormat(viewName){
     delete config[viewName];
   }
 
+  if(viewName in borders){
+    delete borders[viewName];
+  }
+
   configArr = configArr.filter((config)=>{
     return config.viewName !== viewName
   });
@@ -314,6 +326,7 @@ function getCurrentFormat(viewName){
 
 window.addEventListener('resize', updateLayout);
 
+//Layout Component
 export default class Layout extends React.Component {
   constructor(props){
     super(props);
@@ -332,7 +345,7 @@ export default class Layout extends React.Component {
 
   render(){
     let viewName = this.props.name;
-    let tag = this.props.tag || 'div';
+    let htmlTag = this.props.htmlTag || 'div';
     let newChildren = React.Children.map(this.props.children, function(child) {
       let constraints = getContraints(viewName, child);
       //check to see if the element was specified in the layout.
@@ -349,6 +362,22 @@ export default class Layout extends React.Component {
       }
       return React.cloneElement(child, { style: merge(child.props.style, constraints) });
     });
-    return React.createElement(tag, null, newChildren);
+    return React.createElement(htmlTag, null, newChildren);
   }
+}
+
+Layout.propTypes = {
+  name: React.PropTypes.string.isRequired,
+  query: React.PropTypes.func.isRequried,
+  layout: React.PropTypes.arrayOf(React.PropTypes.shape({
+      name: React.PropTypes.string.isRequired,
+      constrainTo: React.PropTypes.oneOfType([
+        React.PropTypes.arrayOf(React.PropTypes.number),
+        React.PropTypes.string
+      ]).isRequired,
+      format: React.PropTypes.arrayOf(React.PropTypes.string).isRequired
+    })
+  ).isRequired,
+  htmlTag: React.PropTypes.string,
+  children: React.PropTypes.any.isRequired
 }
