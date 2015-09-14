@@ -149,17 +149,6 @@ An example of a `formatStyle` prop within a view is:
 - box-sizing: border-box; is the default
 - Visual Format `Z` property is not available
 
-## Demo
-
-To run navigate to `demos\layout`, then run the following commands
-
-```
-npm install
-npm start
-```
-
-Open browser and point it to http://localhost:8080/
-
 ## ToDo
 
 - More Example Code
