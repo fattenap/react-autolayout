@@ -97,7 +97,7 @@ The second is `currentFormat`. This is a string that stores the current format a
 
 #### `htmlTag: string`
 
-This is an option prop that allows you to specify the type of html element to use for the region.
+This is an optional prop that allows you to specify the type of html element to use for the region.
 
 
 ### child element props
