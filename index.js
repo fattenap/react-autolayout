@@ -33,10 +33,6 @@ function  merge() {
 function updateContraints(viewConfig, current) {
   let layoutConstraints = {};
   let subView;
-  let width;
-  let height;
-  let top;
-  let left;
   let constrainTo = viewConfig.layouts[current.format].constrainTo;
   let constrainToIsFixed = viewConfig.layouts[current.format].constrainToIsFixed;
 
@@ -68,33 +64,19 @@ function updateContraints(viewConfig, current) {
   layoutConstraints[viewConfig.viewName].currentFormat = current.format;
   
   for (let subViewKey in viewConfig.view.subViews) {
-    let temp;
     if(viewConfig.view.subViews.hasOwnProperty(subViewKey) && subViewKey[0] !== "_"){
-
       subView = viewConfig.view.subViews[subViewKey];
-      width = subView.width;
-      height = subView.height;
-      top = subView.top;
-      left = subView.left;
-
-      temp = {
-        width: width, 
-        height: height,
-        transform: `translate3d(${left}px, ${top}px, 0)`,
-        position: 'absolute',
-        padding: 0,
-        margin: 0
+      layoutConstraints[viewConfig.viewName][subViewKey] = {
+        style: {
+          width: subView.width, 
+          height: subView.height,
+          transform: `translate3d(${subView.left}px, ${subView.top}px, 0)`,
+          position: 'absolute',
+          padding: 0,
+          margin: 0
+        }
       };
-
-      layoutConstraints[viewConfig.viewName][subViewKey] = merge({
-        style: temp, 
-        parentView: viewConfig.viewName,
-        _top: top, 
-        _left: left,
-        format: current.format,
-        view: subViewKey});
     }
-
   };
   return layoutConstraints;
 }
