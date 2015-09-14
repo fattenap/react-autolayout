@@ -30,15 +30,15 @@ function  merge() {
   return a;
 }
 
-function updateContraints(viewConfig, current) {
+function updateContraints(viewConfig, currentFormat) {
   let layoutConstraints = {};
   let subView;
-  let constrainTo = viewConfig.layouts[current.format].constrainTo;
-  let constrainToIsFixed = viewConfig.layouts[current.format].constrainToIsFixed;
+  let constrainTo = viewConfig.layouts[currentFormat].constrainTo;
+  let constrainToIsFixed = viewConfig.layouts[currentFormat].constrainToIsFixed;
 
   if(constrainToIsFixed){
     viewConfig.view.setSize(constrainTo[0], constrainTo[1]);
-  } else if(viewConfig.layouts[current.format].constrainTo[0] == 'viewport' || !(constrainTo[0] in constraints)){
+  } else if(viewConfig.layouts[currentFormat].constrainTo[0] == 'viewport' || !(constrainTo[0] in constraints)){
     viewConfig.view.setSize(window.innerWidth, window.innerHeight);
   } else {
     
@@ -51,17 +51,17 @@ function updateContraints(viewConfig, current) {
     let borderHeight = borders[constrainToViewName][constrainToViewKey].borderHeight;
 
     if(('format' in  borders[constrainToViewName][constrainToViewKey]) &&
-      current.format in borders[constrainToViewName][constrainToViewKey].format){
+      currentFormat in borders[constrainToViewName][constrainToViewKey].format){
       
-      borderWidth = borders[constrainToViewName][constrainToViewKey].format[current.format].borderWidth;
-      borderHeight = borders[constrainToViewName][constrainToViewKey].format[current.format].borderHeight;
+      borderWidth = borders[constrainToViewName][constrainToViewKey].format[currentFormat].borderWidth;
+      borderHeight = borders[constrainToViewName][constrainToViewKey].format[currentFormat].borderHeight;
     }
     
     viewConfig.view.setSize(style.width - borderWidth, style.height - borderHeight);
   }
 
   layoutConstraints[viewConfig.viewName] = {};
-  layoutConstraints[viewConfig.viewName].currentFormat = current.format;
+  layoutConstraints[viewConfig.viewName].currentFormat = currentFormat;
   
   for (let subViewKey in viewConfig.view.subViews) {
     if(viewConfig.view.subViews.hasOwnProperty(subViewKey) && subViewKey[0] !== "_"){
@@ -83,17 +83,17 @@ function updateContraints(viewConfig, current) {
 
 function updateLayout(e, viewName, applyStyle) {
 
-  let current; 
+  let currentFormat; 
 
   for (let i = 0, l = configArr.length; i < l; i++) {
-    current = configArr[i].query(constraints, configArr[i].currentFormat); 
+    currentFormat = configArr[i].query(constraints, configArr[i].currentFormat); 
 
-    if(configArr[i].currentFormat !== current.format){
+    if(configArr[i].currentFormat !== currentFormat){
       configArr[i].view = new AutoLayout.View();
-      configArr[i].view.addConstraints(configArr[i].layouts[current.format].constraints);
+      configArr[i].view.addConstraints(configArr[i].layouts[currentFormat].constraints);
     }
-    configArr[i].currentFormat = current.format;
-    constraints = merge(constraints, updateContraints(configArr[i], current));
+    configArr[i].currentFormat = currentFormat;
+    constraints = merge(constraints, updateContraints(configArr[i], currentFormat));
   };
 
   for(let k3 in listeners){
@@ -180,7 +180,7 @@ function captureBorderDimensions(style, defaultWidth, defaultHeight){
 
 function addVisualFormat(component, descriptor){
   let viewName = component.props.name;
-  let current;
+  let currentFormat;
 
   invariant(viewName === void(0), 'name is required!');
   invariant((viewName in config), `${viewName} name must be unique.`);
@@ -227,8 +227,8 @@ function addVisualFormat(component, descriptor){
   config[viewName].viewName = viewName;
   config[viewName].view = new AutoLayout.View();
 
-  current = descriptor.query(constraints);
-  config[viewName].currentFormat = current.format;  
+  currentFormat = descriptor.query(constraints);
+  config[viewName].currentFormat = currentFormat;  
 
   for (let i = 0, len = descriptor.layouts.length; i < len; i++) {
     let layout = descriptor.layouts[i];
@@ -245,15 +245,13 @@ function addVisualFormat(component, descriptor){
     config[viewName].layouts[layout.name].constraints = AutoLayout.VisualFormat.parse(layout.format, {extended: true});
   };
 
-  config[viewName].view.addConstraints(config[viewName].layouts[current.format].constraints);
-  constraints = merge(constraints, updateContraints(config[viewName], current));
+  config[viewName].view.addConstraints(config[viewName].layouts[currentFormat].constraints);
+  constraints = merge(constraints, updateContraints(config[viewName], currentFormat));
 
   configArr.push(config[viewName]);
 
   for (let i = 0, l = configArr.length; i < l; i++) {
-    constraints = merge(constraints, updateContraints(configArr[i], {
-      format: configArr[i].currentFormat
-    }));
+    constraints = merge(constraints, updateContraints(configArr[i], configArr[i].currentFormat));
   };
 
   updateLayout();

@@ -23,7 +23,6 @@ var config = {
       test: /\.css$/, loader: "style-loader!css-loader"
     }],
   },
-  plugins: [],
   resolve: {
     extensions: ['', '.js']
   },
