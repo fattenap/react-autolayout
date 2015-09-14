@@ -1,6 +1,6 @@
 import React from 'react';
 import SubChild from './subchild';
-import AutoLayout from 'react-autolayout';
+import AutoLayout from '../../../index.js';
 
 class SubPage extends React.Component {
   constructor(props){

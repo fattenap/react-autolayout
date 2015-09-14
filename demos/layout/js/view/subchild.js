@@ -1,5 +1,5 @@
 import React from 'react';
-import AutoLayout from 'react-autolayout';
+import AutoLayout from '../../../index.js';
 
 class SubChild extends React.Component {
   constructor(props){
