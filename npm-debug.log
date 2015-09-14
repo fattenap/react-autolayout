@@ -1,0 +1,101 @@
+0 info it worked if it ends with ok
+1 verbose cli [ '/usr/local/bin/node', '/usr/local/bin/npm', 'publish' ]
+2 info using npm@2.14.2
+3 info using node@v4.0.0
+4 verbose publish [ '.' ]
+5 silly cache add args [ '.', null ]
+6 verbose cache add spec .
+7 silly cache add parsed spec Result {
+7 silly cache add   raw: '.',
+7 silly cache add   scope: null,
+7 silly cache add   name: null,
+7 silly cache add   rawSpec: '.',
+7 silly cache add   spec: '/Users/frank/Projects/react-autolayout',
+7 silly cache add   type: 'directory' }
+8 verbose addLocalDirectory /Users/frank/.npm/react-autolayout/0.1.3-alpha/package.tgz not in flight; packing
+9 verbose tar pack [ '/Users/frank/.npm/react-autolayout/0.1.3-alpha/package.tgz',
+9 verbose tar pack   '/Users/frank/Projects/react-autolayout' ]
+10 verbose tarball /Users/frank/.npm/react-autolayout/0.1.3-alpha/package.tgz
+11 verbose folder /Users/frank/Projects/react-autolayout
+12 info prepublish react-autolayout@0.1.3-alpha
+13 verbose addLocalTarball adding from inside cache /Users/frank/.npm/react-autolayout/0.1.3-alpha/package.tgz
+14 silly cache afterAdd react-autolayout@0.1.3-alpha
+15 verbose afterAdd /Users/frank/.npm/react-autolayout/0.1.3-alpha/package/package.json not in flight; writing
+16 verbose afterAdd /Users/frank/.npm/react-autolayout/0.1.3-alpha/package/package.json written
+17 silly publish { name: 'react-autolayout',
+17 silly publish   version: '0.1.3-alpha',
+17 silly publish   description: 'Auto layout for React using Apple\'s Visual Format Language',
+17 silly publish   main: './build/react-autolayout.js',
+17 silly publish   scripts: { test: 'echo "Error: no test specified" && exit 1' },
+17 silly publish   keywords: [ 'react' ],
+17 silly publish   homepage: 'https://github.com/fattenap/react-autolayout',
+17 silly publish   author: { name: 'Frank Panetta' },
+17 silly publish   repository:
+17 silly publish    { type: 'git',
+17 silly publish      url: 'git+https://github.com/fattenap/react-autolayout.git' },
+17 silly publish   devDependencies:
+17 silly publish    { 'babel-core': '^5.6.15',
+17 silly publish      'babel-loader': '^5.2.2',
+17 silly publish      'css-loader': '^0.18.0',
+17 silly publish      'style-loader': '^0.12.3',
+17 silly publish      webpack: '^1.10.0',
+17 silly publish      'webpack-dev-server': '^1.10.1' },
+17 silly publish   license: 'MIT',
+17 silly publish   dependencies: { autolayout: '^0.5.1' },
+17 silly publish   peerDependencies: { react: '0.14.0-rc1', 'react-dom': '0.14.0-rc1' },
+17 silly publish   readme: 'React-Autolayout\n=====\n\nAuto layout for React using Apple\'s Visual Format Language. React-Autolayout is a wrapper around the [AutoLayout.js](http://ijzerenhein.github.io/autolayout.js/) library.\n\nNPM:\n`npm install react-autolayout`\n\nBower:\n`bower install react-autolayout`\n\nScript Tag:\n`<script src="path/to/react-autolayout/build/react-autolayout.js"></script>`\n(Module exposed as `ReactAutoLayout`)\n\n## API\n\n### Sample Usage\n\n```js\nclass Demo extends React.Component {\n\n  query(constraints) {\n    if(\'demo\' in constraints){\n      if(constraints.demo.page.width < 600){\n        return \'narrow\';\n      } else {\n        return \'default\';\n      }\n    }\n    return \'default\';\n  }\n\n  render() {\n    return (\n      <AutoLayout name="demo" query={this.query}\n        layout={[\n          { \n            name: \'default\',\n            constrainTo: \'viewport\',\n            format: [\'|~[page(90%)]~|\',\n                    \'V:|-15%-[page]-150-|\']\n          },\n          { \n            name: \'narrow\',\n            constrainTo: \'viewport\',\n            format: [\'|~[page(60%)]~|\',\n                    \'V:|-15%-[page]-150-|\']\n          }\n        ]}>\n        <div viewKey="page" >\n          ...\n        </div>\n      </AutoLayout>\n    );\n  }\n}\n```\n\n### &lt;AutoLayout /> props\n\n#### `name: string`\nThe `name` prop defines a region that will have auto layout applied and is used to identify the region. It is  **required and must be unique**.\n\n#### `layout: array[object]`\n`layout` holds an array of layout configuration objects. The different configurations get applied in response to `query` changes (see next). Each configuration object **must** have the following 3 properties:\n\n- `name: string` is used to identify the configuration.\n- `constrainTo: string | array` specifies which view the layout region should be contrained to. There are three possible values:\n    - `\'viewport\'` contrain to the window\n    - `\'${name}.${viewKey}\'` constrain to another view\n    - `[width, height]` constrain to a fixed width and height in `px`. Width and height are specified as a **number** without the `px` suffix\n- `format: array[string]` takes an array of string specified by the Visual Format Language. Please refer to [AutoLayout.js](http://ijzerenhein.github.io/autolayout.js/) documentation for usage.\n\n#### `query: function -> string`\n\n```js\nquery(constraints, currentFormat){\n    if(\'demo\' in constraints){\n      if(constraints.demo.page.width < 600){\n        return \'narrow\';\n      } else {\n        return \'default\';\n      }\n    }\n    return \'default\';\n}\n```\n\nThe `query` prop takes a function that returns a string representing the name of the layout to be applied. It can be thought of as a custom media query in which you specify the break points based on the criteria you determine.\n\nThe query function will receive two parameters.\n\nThe first is `constraints`. `constraints` holds the current state of all autolayout objects. You are able to reference view styles to determine breack points. The shape of `constraints` is ${name}.${viewKey}.width|height\n\nThe second is `currentFormat`. This is a string that stores the current format applied to the region.\n\n#### `htmlTag: string`\n\nThis is an optional prop that allows you to specify the type of html element to use for the region.\n\n\n### child element props\n\n```js\n<AutoLayout>\n    <div viewKey="child1" >\n      ...\n    </div>\n    <div viewKey="child2" >\n      ...\n    </div>\n    <div viewKey="child3" >\n      ...\n    </div>\n</AutoLayout>\n```\nChild elements define the view to be laid out. You can have as many child views as required. Child elements cannot be React Components and must be the first level element within AutoLayout. A view has the following props:\n\n- `viewKey: string` The `viewKey` is used within the Visual Format to identify the view. `viewKey`\'s must be unique within a Component and is a required prop.\n- `formatStyle: object` is an optional prop that specifies styles to be applied to certain layouts. You do not need to specify every layout, only the ones that you would like a style aplied to. The format style is then merge with any existing styles set on the view. \n\nAn example of a `formatStyle` prop within a view is:\n\n```js\n<div \n    viewKey="child2" \n    formatStyle={{\n        narrow: {\n            backgroundColor: \'black\',\n            zIndex: 10\n        }\n    }}>\n    <div>child2 Text</div>\n</div>\n```\n\n## Caveats\n\n- Setting the following styles on child elements have no effect as they are overridden. Default values are displayed.\n    + top: dynamically set\n    + left: dynamically set\n    + width: dynamically set\n    + height: dynamically set\n    + margin: 0\n    + padding: 0\n    + position: absolute\n    + transform: dynamically set\n- box-sizing: border-box; is the default\n- Visual Format `Z` property is not available\n\n## ToDo\n\n- Example Code\n- Tests\n\n## Author\nFrank Panetta  - [Follow @fattenap](https://twitter.com/intent/follow?screen_name=fattenap)\n\n## License\n### The MIT License (MIT)\n\nCopyright (c) 2015 Frank Panetta\n\nPermission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.',
+17 silly publish   readmeFilename: 'README.md',
+17 silly publish   gitHead: '5391eb367de5ea21e80bff53cd5e760b5f28a3dc',
+17 silly publish   bugs: { url: 'https://github.com/fattenap/react-autolayout/issues' },
+17 silly publish   _id: 'react-autolayout@0.1.3-alpha',
+17 silly publish   _shasum: '18370375fe15e90fdae2b13ea8bdf63b727ad42d',
+17 silly publish   _from: '.' }
+18 verbose getPublishConfig undefined
+19 silly mapToRegistry name react-autolayout
+20 silly mapToRegistry using default registry
+21 silly mapToRegistry registry https://registry.npmjs.org/
+22 silly mapToRegistry uri https://registry.npmjs.org/react-autolayout
+23 verbose publish registryBase https://registry.npmjs.org/
+24 silly publish uploading /Users/frank/.npm/react-autolayout/0.1.3-alpha/package.tgz
+25 verbose request uri https://registry.npmjs.org/react-autolayout
+26 verbose request sending authorization for write operation
+27 info attempt registry request try #1 at 6:41:19 PM
+28 verbose request id 1c43ed7b01b02b49
+29 http request PUT https://registry.npmjs.org/react-autolayout
+30 http 403 https://registry.npmjs.org/react-autolayout
+31 verbose headers { 'content-type': 'application/json',
+31 verbose headers   'cache-control': 'max-age=60',
+31 verbose headers   'content-length': '101',
+31 verbose headers   'accept-ranges': 'bytes',
+31 verbose headers   date: 'Mon, 14 Sep 2015 08:41:21 GMT',
+31 verbose headers   via: '1.1 varnish',
+31 verbose headers   connection: 'keep-alive',
+31 verbose headers   'x-served-by': 'cache-mel6521-MEL',
+31 verbose headers   'x-cache': 'MISS',
+31 verbose headers   'x-cache-hits': '0',
+31 verbose headers   'x-timer': 'S1442220079.629942,VS0,VE2347' }
+32 verbose request invalidating /Users/frank/.npm/registry.npmjs.org/react-autolayout on PUT
+33 error publish Failed PUT 403
+34 verbose stack Error: "You cannot publish over the previously published version 0.1.3-alpha." : react-autolayout
+34 verbose stack     at makeError (/usr/local/lib/node_modules/npm/node_modules/npm-registry-client/lib/request.js:263:12)
+34 verbose stack     at CachingRegistryClient.<anonymous> (/usr/local/lib/node_modules/npm/node_modules/npm-registry-client/lib/request.js:251:14)
+34 verbose stack     at Request._callback (/usr/local/lib/node_modules/npm/node_modules/npm-registry-client/lib/request.js:171:14)
+34 verbose stack     at Request.self.callback (/usr/local/lib/node_modules/npm/node_modules/request/request.js:198:22)
+34 verbose stack     at emitTwo (events.js:87:13)
+34 verbose stack     at Request.emit (events.js:172:7)
+34 verbose stack     at Request.<anonymous> (/usr/local/lib/node_modules/npm/node_modules/request/request.js:1073:14)
+34 verbose stack     at emitOne (events.js:82:20)
+34 verbose stack     at Request.emit (events.js:169:7)
+34 verbose stack     at IncomingMessage.<anonymous> (/usr/local/lib/node_modules/npm/node_modules/request/request.js:1019:12)
+35 verbose statusCode 403
+36 verbose pkgid react-autolayout
+37 verbose cwd /Users/frank/Projects/react-autolayout
+38 error Darwin 14.5.0
+39 error argv "/usr/local/bin/node" "/usr/local/bin/npm" "publish"
+40 error node v4.0.0
+41 error npm  v2.14.2
+42 error code E403
+43 error "You cannot publish over the previously published version 0.1.3-alpha." : react-autolayout
+44 error If you need help, you may report this error at:
+44 error     <https://github.com/npm/npm/issues>
+45 verbose exit [ 1, true ]

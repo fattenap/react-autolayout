@@ -1,6 +1,6 @@
 {
   "name": "react-autolayout",
-  "version": "0.1.3-alpha",
+  "version": "0.1.4-alpha",
   "description": "Auto layout for React using Apple's Visual Format Language",
   "main": "./build/react-autolayout.js",
   "homepage": "https://github.com/fattenap/react-autolayout",
@@ -15,7 +15,10 @@
     "node"
   ],
   "keywords": [
-    "react"
+    "react",
+    "autolayout",
+    "visual format",
+    "auto layout"
   ],
   "license": "MIT",
   "ignore": [
