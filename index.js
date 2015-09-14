@@ -74,7 +74,9 @@ function updateContraints(viewConfig, currentFormat) {
           position: 'absolute',
           padding: 0,
           margin: 0
-        }
+        },
+        width: subView.width, 
+        height: subView.height,  
       };
     }
   };
