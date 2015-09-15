@@ -91,9 +91,9 @@ The `query` prop takes a function that returns a string representing the name of
 
 The query function will receive two parameters.
 
-The first is `constraints`. `constraints` holds the current state of all autolayout objects. You are able to reference view styles to determine breack points. The shape of `constraints` is ${name}.${viewKey}.width|height
+The first is `constraints`. `constraints` holds the current state of all autolayout objects. You are able to reference view width and height to determine break points. The shape of `constraints` is ${name}.${viewKey}.width|height
 
-The second is `currentFormat`. This is a string that stores the current format applied to the region.
+The second is `currentFormat`. This is a string that stores the format currently applied to the region.
 
 #### `htmlTag: string`
 
