@@ -1,6 +1,6 @@
 {
   "name": "react-autolayout",
-  "version": "0.1.4-alpha2",
+  "version": "0.1.4-alpha3",
   "description": "Auto layout for React using Apple's Visual Format Language",
   "main": "./build/react-autolayout.js",
   "scripts": {

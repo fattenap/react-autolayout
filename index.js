@@ -1,5 +1,5 @@
 import './styles.css';
-import AutoLayout from './node_modules/autolayout/dist/autolayout.min.js';
+import autolayout from './node_modules/autolayout/dist/autolayout.min.js';
 import React from 'react';
 
 let listeners = {};
@@ -91,7 +91,7 @@ function updateLayout(e, viewName, applyStyle) {
     currentFormat = configArr[i].query(constraints, configArr[i].currentFormat); 
 
     if(configArr[i].currentFormat !== currentFormat){
-      configArr[i].view = new AutoLayout.View();
+      configArr[i].view = new autolayout.View();
       configArr[i].view.addConstraints(configArr[i].layouts[currentFormat].constraints);
     }
     configArr[i].currentFormat = currentFormat;
@@ -227,7 +227,7 @@ function addVisualFormat(component, descriptor){
   config[viewName].layouts = {};
   config[viewName].query = descriptor.query;
   config[viewName].viewName = viewName;
-  config[viewName].view = new AutoLayout.View();
+  config[viewName].view = new autolayout.View();
 
   currentFormat = descriptor.query(constraints);
   config[viewName].currentFormat = currentFormat;  
@@ -244,7 +244,7 @@ function addVisualFormat(component, descriptor){
       config[viewName].layouts[layout.name].constrainToIsFixed = false;
       config[viewName].layouts[layout.name].constrainTo = layout.constrainTo.split('.');
     }
-    config[viewName].layouts[layout.name].constraints = AutoLayout.VisualFormat.parse(layout.format, {extended: true});
+    config[viewName].layouts[layout.name].constraints = autolayout.VisualFormat.parse(layout.format, {extended: true});
   };
 
   config[viewName].view.addConstraints(config[viewName].layouts[currentFormat].constraints);
@@ -309,7 +309,7 @@ function getCurrentFormat(viewName){
 window.addEventListener('resize', updateLayout);
 
 //Layout Component
-export default class Layout extends React.Component {
+export default class AutoLayout extends React.Component {
   constructor(props){
     super(props);
   }
@@ -348,7 +348,7 @@ export default class Layout extends React.Component {
   }
 }
 
-Layout.propTypes = {
+AutoLayout.propTypes = {
   name: React.PropTypes.string.isRequired,
   query: React.PropTypes.func.isRequried,
   layout: React.PropTypes.arrayOf(React.PropTypes.shape({
