@@ -66,7 +66,7 @@ function updateContraints(viewConfig, currentFormat, currentStyles) {
   let widths = {};
   let heights = {};
   let w, h; //width, height
-
+  
   if ('spacing' in viewConfig.layouts[currentFormat].metaInfo) {
     viewConfig.view.setSpacing(viewConfig.layouts[currentFormat].metaInfo.spacing);
   }
@@ -168,16 +168,18 @@ function updateLayout(e, viewName, applyStyle) {
   let current; 
 
   for (let i = 0, l = configArr.length; i < l; i++) {
-    current = configArr[i].query(constraints, configArr[i].currentFormat); 
-    if (configArr[i].currentFormat !== current.format){
-      configArr[i].view = new autolayout.View();
-      configArr[i].view.addConstraints(configArr[i].layouts[current.format].constraints);
+    current = configArr[i].query(constraints, configArr[i].currentFormat) || {};
+    if(current.format !== void(0)){    
+      if (configArr[i].currentFormat !== current.format){
+        configArr[i].view = new autolayout.View();
+        configArr[i].view.addConstraints(configArr[i].layouts[current.format].constraints);
+      }
+      configArr[i].currentFormat = current.format;
     }
-    configArr[i].currentFormat = current.format;
-    constraints = merge(constraints, updateContraints(configArr[i], current.format, current.styles));
+    constraints = merge(constraints, updateContraints(configArr[i], configArr[i].currentFormat/*current.format*/, current.styles));
   };
 
-  for(let k3 in listeners){
+  for (let k3 in listeners){
     if (listeners.hasOwnProperty(k3)){
       listeners[k3]();
     }
@@ -282,7 +284,7 @@ function addVisualFormat(component, descriptor){
   
     if ('formatStyle' in child.props){
       borders[viewName][child.props.viewKey].format = borders[viewName][child.props.viewKey].format || {};
-      for(let k in child.props.formatStyle){
+      for (let k in child.props.formatStyle){
         if (child.props.formatStyle.hasOwnProperty(k)){
           borders[viewName][child.props.viewKey].format[k] = {};
           
@@ -302,17 +304,23 @@ function addVisualFormat(component, descriptor){
     component.forceUpdate();
   };
 
+  /*
+    If descriptor.layouts is not an Array it is assumed that an object has been passed. If an object has been passed then
+    'query' is optional. However 'query' can still be used to set styles without referencing a format.
+  */
+  let layouts = Object.prototype.toString.call(descriptor.layouts) === '[object Array]' ? descriptor.layouts : [descriptor.layouts];
+
   config[viewName] = {};
   config[viewName].layouts = {};
-  config[viewName].query = descriptor.query;
+  config[viewName].query = descriptor.query || () => {}; //If no query then just get an object.
   config[viewName].viewName = viewName;
 
-  current = descriptor.query(constraints);
-  config[viewName].currentFormat = current.format;
+  current = config[viewName].query(constraints) || {};
+  config[viewName].currentFormat = current.format || layouts[0].name; //If format undefined then 'query' sets styles only.
   config[viewName].currentStyles = current.styles;
 
-  for (let i = 0, len = descriptor.layouts.length; i < len; i++) {
-    let layout = descriptor.layouts[i];
+  for (let i = 0, len = layouts.length; i < len; i++) {
+    let layout = layouts[i];
     config[viewName].layouts[layout.name] = {};
     config[viewName].layouts[layout.name].htmlTag = layout.htmlTag;
     if (Object.prototype.toString.call(layout.constrainTo) === '[object Array]'){
@@ -326,14 +334,10 @@ function addVisualFormat(component, descriptor){
     config[viewName].layouts[layout.name].constraints = autolayout.VisualFormat.parse(layout.format, {extended: true});
     config[viewName].layouts[layout.name].metaInfo = autolayout.VisualFormat.parseMetaInfo ? autolayout.VisualFormat.parseMetaInfo(layout.format) : {};
   };
-  // if ('viewport' in config[viewName].layouts[current.format].metaInfo){
-  //   console.log(config[viewName].layouts[current.format].metaInfo);
-  //   // config[viewName].view = new autolayout.View(config[viewName].layouts[current.format].metaInfo);
-  // } else {
-    config[viewName].view = new autolayout.View();
-  // }
-  config[viewName].view.addConstraints(config[viewName].layouts[current.format].constraints);
-  constraints = merge(constraints, updateContraints(config[viewName], current.format, current.styles));
+
+  config[viewName].view = new autolayout.View();
+  config[viewName].view.addConstraints(config[viewName].layouts[config[viewName].currentFormat].constraints);
+  constraints = merge(constraints, updateContraints(config[viewName], config[viewName].currentFormat, config[viewName].currentStyles));
 
   configArr.push(config[viewName]);
 
@@ -435,8 +439,9 @@ export default class AutoLayout extends React.Component {
 
 AutoLayout.propTypes = {
   name: React.PropTypes.string.isRequired,
-  query: React.PropTypes.func.isRequried,
-  layout: React.PropTypes.arrayOf(React.PropTypes.shape({
+  query: React.PropTypes.func,
+  layout: React.PropTypes.oneOfType([
+    React.PropTypes.shape({
       name: React.PropTypes.string.isRequired,
       constrainTo: React.PropTypes.oneOfType([
         React.PropTypes.arrayOf(React.PropTypes.number),
@@ -446,8 +451,20 @@ AutoLayout.propTypes = {
         React.PropTypes.arrayOf(React.PropTypes.string),
         React.PropTypes.string
       ]).isRequired
-    })
-  ).isRequired,
+    }),
+    React.PropTypes.arrayOf(React.PropTypes.shape({
+        name: React.PropTypes.string.isRequired,
+        constrainTo: React.PropTypes.oneOfType([
+          React.PropTypes.arrayOf(React.PropTypes.number),
+          React.PropTypes.string
+        ]).isRequired,
+        format: React.PropTypes.oneOfType([
+          React.PropTypes.arrayOf(React.PropTypes.string),
+          React.PropTypes.string
+        ]).isRequired
+      })
+    )
+  ]).isRequired,
   htmlTag: React.PropTypes.string,
   children: React.PropTypes.any.isRequired
 }
