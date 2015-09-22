@@ -1,5 +1,5 @@
 import './styles.css';
-import autolayout from './node_modules/autolayout/dist/autolayout.min.js';
+import autolayout from './node_modules/autolayout/dist/autolayout.kiwi.js';
 import React from 'react';
 
 let listeners = {};
@@ -19,9 +19,7 @@ function  merge() {
   let a = {};
   Array.prototype.slice.call(arguments).forEach(function(x) {
     for (let k in x) {
-      if (k === 'top' || 
-        k === 'left' || 
-        !x.hasOwnProperty(k)) {
+      if (!x.hasOwnProperty(k)) {
         continue;
       }
       a[k] = x[k];
@@ -30,16 +28,69 @@ function  merge() {
   return a;
 }
 
-function updateContraints(viewConfig, currentFormat) {
+function getViewportDimensions(viewport, w, h){
+  //TODO: intrinsic values
+  if(viewport !== void(0)){
+    if('height' in viewport){
+      h = viewport.height;
+    }
+    if('width' in viewport){
+      w = viewport.width; 
+    }
+    if('max-height' in viewport){
+      h = h > viewport['max-height'] ? viewport['max-height'] : h;
+    }
+    if('min-height' in viewport){
+      h = h < viewport['min-height'] ? viewport['min-height'] : h;
+    }
+    if('aspect-ratio' in viewport){
+      w = viewport['aspect-ratio'] * h;
+    }
+    if('max-width' in viewport){
+      w = w > viewport['max-width'] ? viewport['max-width'] : w; 
+    }
+    if('min-width' in viewport){
+      w = w < viewport['min-width'] ? viewport['min-width'] : w; 
+    }
+  }
+  return [w, h];
+}
+
+function updateContraints(viewConfig, currentFormat, currentStyles) {
   let layoutConstraints = {};
   let subView;
   let constrainTo = viewConfig.layouts[currentFormat].constrainTo;
   let constrainToIsFixed = viewConfig.layouts[currentFormat].constrainToIsFixed;
+  let viewport = {};
+  let colors = {};
+  let widths = {};
+  let heights = {};
+  let w, h; //width, height
 
-  if(constrainToIsFixed){
-    viewConfig.view.setSize(constrainTo[0], constrainTo[1]);
-  } else if(viewConfig.layouts[currentFormat].constrainTo[0] == 'viewport' || !(constrainTo[0] in constraints)){
-    viewConfig.view.setSize(window.innerWidth, window.innerHeight);
+  if ('spacing' in viewConfig.layouts[currentFormat].metaInfo) {
+    viewConfig.view.setSpacing(viewConfig.layouts[currentFormat].metaInfo.spacing);
+  }
+
+  if ('viewport' in viewConfig.layouts[currentFormat].metaInfo) {
+    viewport = viewConfig.layouts[currentFormat].metaInfo.viewport;
+  }
+
+  if ('colors' in viewConfig.layouts[currentFormat].metaInfo) {
+    colors = viewConfig.layouts[currentFormat].metaInfo.colors;
+  }
+
+  if ('widths' in viewConfig.layouts[currentFormat].metaInfo) {
+    widths = viewConfig.layouts[currentFormat].metaInfo.widths;
+  }
+
+  if ('heights' in viewConfig.layouts[currentFormat].metaInfo) {
+    heights = viewConfig.layouts[currentFormat].metaInfo.heights;
+  }
+
+  if (constrainToIsFixed){
+    [w, h] = getViewportDimensions(viewport, constrainTo[0], constrainTo[1]);
+  } else if (viewConfig.layouts[currentFormat].constrainTo[0] == 'viewport' || !(constrainTo[0] in constraints)){
+    [w, h] = getViewportDimensions(viewport, window.innerWidth, window.innerHeight);
   } else {
     
     let constrainToViewName = constrainTo[0];
@@ -50,34 +101,63 @@ function updateContraints(viewConfig, currentFormat) {
     let borderWidth = borders[constrainToViewName][constrainToViewKey].borderWidth;
     let borderHeight = borders[constrainToViewName][constrainToViewKey].borderHeight;
 
-    if(('format' in  borders[constrainToViewName][constrainToViewKey]) &&
+    if (('format' in  borders[constrainToViewName][constrainToViewKey]) &&
       currentFormat in borders[constrainToViewName][constrainToViewKey].format){
       
       borderWidth = borders[constrainToViewName][constrainToViewKey].format[currentFormat].borderWidth;
       borderHeight = borders[constrainToViewName][constrainToViewKey].format[currentFormat].borderHeight;
     }
     
-    viewConfig.view.setSize(style.width - borderWidth, style.height - borderHeight);
+    [w, h] = getViewportDimensions(viewport, style.width - borderWidth, style.height - borderHeight);
   }
 
+  viewConfig.view.setSize(w, h);
   layoutConstraints[viewConfig.viewName] = {};
   layoutConstraints[viewConfig.viewName].currentFormat = currentFormat;
   
   for (let subViewKey in viewConfig.view.subViews) {
-    if(viewConfig.view.subViews.hasOwnProperty(subViewKey) && subViewKey[0] !== "_"){
+    if (viewConfig.view.subViews.hasOwnProperty(subViewKey) && subViewKey[0] !== "_"){
       subView = viewConfig.view.subViews[subViewKey];
       layoutConstraints[viewConfig.viewName][subViewKey] = {
         style: {
           width: subView.width, 
           height: subView.height,
-          transform: `translate3d(${subView.left}px, ${subView.top}px, 0)`,
+          top: subView.top,
+          left: subView.left,
+          zIndex: subView.zIndex * 5,
+          // transform: `translate3d(${subView.left}px, ${subView.top}px, 0)`,
           position: 'absolute',
-          padding: 0,
-          margin: 0
+          margin: 0,
+          padding: 0
         },
+        top: subView.top,
+        left: subView.left,
         width: subView.width, 
-        height: subView.height,  
+        height: subView.height,
+        zIndex: subView.zIndex * 5,
       };
+    }
+    if(currentStyles !== void(0) && subViewKey in currentStyles){
+      layoutConstraints[viewConfig.viewName][subViewKey].style = merge(currentStyles[subViewKey], layoutConstraints[viewConfig.viewName][subViewKey].style);
+    }
+    if (subViewKey in colors){
+      layoutConstraints[viewConfig.viewName][subViewKey].style.backgroundColor = colors[subViewKey];
+    }
+    if (subViewKey in widths){
+      if (widths[subViewKey] === true){
+        //TODO
+        //intrinsic width
+      } else {
+        layoutConstraints[viewConfig.viewName][subViewKey].style.width = widths[subViewKey];
+      }
+    }
+    if (subViewKey in heights){
+      if (heights[subViewKey] === true){
+        //TODO
+        //intrinsic height
+      } else {
+        layoutConstraints[viewConfig.viewName][subViewKey].style.height = heights[subViewKey];
+      }
     }
   };
   return layoutConstraints;
@@ -85,21 +165,20 @@ function updateContraints(viewConfig, currentFormat) {
 
 function updateLayout(e, viewName, applyStyle) {
 
-  let currentFormat; 
+  let current; 
 
   for (let i = 0, l = configArr.length; i < l; i++) {
-    currentFormat = configArr[i].query(constraints, configArr[i].currentFormat); 
-
-    if(configArr[i].currentFormat !== currentFormat){
+    current = configArr[i].query(constraints, configArr[i].currentFormat); 
+    if (configArr[i].currentFormat !== current.format){
       configArr[i].view = new autolayout.View();
-      configArr[i].view.addConstraints(configArr[i].layouts[currentFormat].constraints);
+      configArr[i].view.addConstraints(configArr[i].layouts[current.format].constraints);
     }
-    configArr[i].currentFormat = currentFormat;
-    constraints = merge(constraints, updateContraints(configArr[i], currentFormat));
+    configArr[i].currentFormat = current.format;
+    constraints = merge(constraints, updateContraints(configArr[i], current.format, current.styles));
   };
 
   for(let k3 in listeners){
-    if(listeners.hasOwnProperty(k3)){
+    if (listeners.hasOwnProperty(k3)){
       listeners[k3]();
     }
   }
@@ -109,70 +188,70 @@ function captureBorderDimensions(style, defaultWidth, defaultHeight){
   let border, width = defaultWidth || 0, height = defaultHeight || 0;
   let len;
 
-  if('border' in style){
+  if ('border' in style){
     border = style.border.match(pxRegex);
     width = border[0] * 2;
     height = border[0] * 2;
-  } else if('borderTop' in style || 
+  } else if ('borderTop' in style || 
     'borderBottom' in style) {
     height = 0;
-    if('borderTop' in style) {
+    if ('borderTop' in style) {
       border = style.borderTop.match(pxRegex);
       height += border[0];
     }
-    if('borderBottom' in style) {
+    if ('borderBottom' in style) {
       border = style.borderBottom.match(pxRegex);
       height += border[0];      
     }
-  } else if('borderRight' in style || 
+  } else if ('borderRight' in style || 
     'borderLeft' in style) {
     width = 0;
-    if('borderRight' in style) {
+    if ('borderRight' in style) {
       border = style.borderRight.match(pxRegex);
       width += border[0];
     }
-    if('borderLeft' in style) {
+    if ('borderLeft' in style) {
       border = style.borderLeft.match(pxRegex);
       width += border[0];
     }
-  } else if('borderWidth' in style){
+  } else if ('borderWidth' in style){
     border = style.borderWidth.match(pxRegex);
     len = border.length;
-    if(len === 1){
+    if (len === 1){
       width = border[0] * 2;
       height = border[0] * 2;
     }
-    if(len === 2){
+    if (len === 2){
       width = border[1] * 2;
       height = border[0] * 2;      
     }
-    if(len === 3){
+    if (len === 3){
       width = border[1] * 2;
       height = border[0] * border[2];            
     }
-    if(len === 4){
+    if (len === 4){
       width = border[1] * border[4];
       height = border[0] * border[2];      
     }
-  } else if('borderTopWidth' in style || 
+  } else if ('borderTopWidth' in style || 
     'borderBottomWidth' in style) {
     height = 0;
-    if('borderTopWidth' in style) {
+    if ('borderTopWidth' in style) {
       border = style.borderTopWidth.match(pxRegex);
       height += border[0];
     }
-    if('borderBottomWidth' in style) {
+    if ('borderBottomWidth' in style) {
       border = style.borderBottomWidth.match(pxRegex);
       height += border[0];      
     }
-  } else if('borderRightWidth' in style || 
+  } else if ('borderRightWidth' in style || 
     'borderLeftWidth' in style) {
     width = 0;
-    if('borderRightWidth' in style) {
+    if ('borderRightWidth' in style) {
       border = style.borderRightWidth.match(pxRegex);
       width += border[0];
     }
-    if('borderLeftWidth' in style) {
+    if ('borderLeftWidth' in style) {
       border = style.borderLeftWidth.match(pxRegex);
       width += border[0];
     }
@@ -182,7 +261,7 @@ function captureBorderDimensions(style, defaultWidth, defaultHeight){
 
 function addVisualFormat(component, descriptor){
   let viewName = component.props.name;
-  let currentFormat;
+  let current;
 
   invariant(viewName === void(0), 'name is required!');
   invariant((viewName in config), `${viewName} name must be unique.`);
@@ -195,16 +274,16 @@ function addVisualFormat(component, descriptor){
     borders[viewName][child.props.viewKey].borderWidth = 0;
     borders[viewName][child.props.viewKey].borderHeight = 0;
   
-    if('style' in child.props){
+    if ('style' in child.props){
       let {width, height} = captureBorderDimensions(child.props.style);
       borders[viewName][child.props.viewKey].borderWidth = width;
       borders[viewName][child.props.viewKey].borderHeight = height;
     }
   
-    if('formatStyle' in child.props){
+    if ('formatStyle' in child.props){
       borders[viewName][child.props.viewKey].format = borders[viewName][child.props.viewKey].format || {};
       for(let k in child.props.formatStyle){
-        if(child.props.formatStyle.hasOwnProperty(k)){
+        if (child.props.formatStyle.hasOwnProperty(k)){
           borders[viewName][child.props.viewKey].format[k] = {};
           
           let {width, height} = captureBorderDimensions(child.props.formatStyle[k], 
@@ -227,16 +306,16 @@ function addVisualFormat(component, descriptor){
   config[viewName].layouts = {};
   config[viewName].query = descriptor.query;
   config[viewName].viewName = viewName;
-  config[viewName].view = new autolayout.View();
 
-  currentFormat = descriptor.query(constraints);
-  config[viewName].currentFormat = currentFormat;  
+  current = descriptor.query(constraints);
+  config[viewName].currentFormat = current.format;
+  config[viewName].currentStyles = current.styles;
 
   for (let i = 0, len = descriptor.layouts.length; i < len; i++) {
     let layout = descriptor.layouts[i];
     config[viewName].layouts[layout.name] = {};
     config[viewName].layouts[layout.name].htmlTag = layout.htmlTag;
-    if(Object.prototype.toString.call(layout.constrainTo) === '[object Array]'){
+    if (Object.prototype.toString.call(layout.constrainTo) === '[object Array]'){
       config[viewName].layouts[layout.name].constrainToIsFixed = true;
       config[viewName].layouts[layout.name].constrainTo = layout.constrainTo;
     } else {
@@ -245,15 +324,21 @@ function addVisualFormat(component, descriptor){
       config[viewName].layouts[layout.name].constrainTo = layout.constrainTo.split('.');
     }
     config[viewName].layouts[layout.name].constraints = autolayout.VisualFormat.parse(layout.format, {extended: true});
+    config[viewName].layouts[layout.name].metaInfo = autolayout.VisualFormat.parseMetaInfo ? autolayout.VisualFormat.parseMetaInfo(layout.format) : {};
   };
-
-  config[viewName].view.addConstraints(config[viewName].layouts[currentFormat].constraints);
-  constraints = merge(constraints, updateContraints(config[viewName], currentFormat));
+  // if ('viewport' in config[viewName].layouts[current.format].metaInfo){
+  //   console.log(config[viewName].layouts[current.format].metaInfo);
+  //   // config[viewName].view = new autolayout.View(config[viewName].layouts[current.format].metaInfo);
+  // } else {
+    config[viewName].view = new autolayout.View();
+  // }
+  config[viewName].view.addConstraints(config[viewName].layouts[current.format].constraints);
+  constraints = merge(constraints, updateContraints(config[viewName], current.format, current.styles));
 
   configArr.push(config[viewName]);
 
   for (let i = 0, l = configArr.length; i < l; i++) {
-    constraints = merge(constraints, updateContraints(configArr[i], configArr[i].currentFormat));
+    constraints = merge(constraints, updateContraints(configArr[i], configArr[i].currentFormat, configArr[i].currentStyles));
   };
 
   updateLayout();
@@ -262,20 +347,20 @@ function addVisualFormat(component, descriptor){
 
 function removeVisualFormat(viewName){
 
-  if(viewName in listeners){
+  if (viewName in listeners){
     delete listeners[viewName];
   }
 
-  if(viewName in constraints){
+  if (viewName in constraints){
     delete constraints[viewName];
   }
 
-  if(viewName in config){
+  if (viewName in config){
     config[viewName].view = null;
     delete config[viewName];
   }
 
-  if(viewName in borders){
+  if (viewName in borders){
     delete borders[viewName];
   }
 
@@ -289,7 +374,7 @@ function removeVisualFormat(viewName){
 
 function getContraints(viewName, view){
   let viewKey = !!viewName && !!view ? view.props.viewKey : void(0);
-  if(viewKey === void(0) ||
+  if (viewKey === void(0) ||
     !(viewName in constraints) || 
     !(viewKey in constraints[viewName])){
     return void(0);
@@ -298,7 +383,7 @@ function getContraints(viewName, view){
 }
 
 function getCurrentFormat(viewName){ 
-  if(viewName === void(0) || 
+  if (viewName === void(0) || 
     viewName === null || 
     !(viewName in constraints)){
     return void(0);
@@ -331,12 +416,12 @@ export default class AutoLayout extends React.Component {
     let newChildren = React.Children.map(this.props.children, function(child) {
       let constraints = getContraints(viewName, child);
       //check to see if the element was specified in the layout.
-      if(constraints === void(0)) {
+      if (constraints === void(0)) {
         return child;
       }      
-      if('formatStyle' in child.props){
+      if ('formatStyle' in child.props){
         let currentFormat = getCurrentFormat(viewName);
-        if(currentFormat !== void(0) && (currentFormat in child.props.formatStyle)){
+        if (currentFormat !== void(0) && (currentFormat in child.props.formatStyle)){
           return React.cloneElement(child, { 
             style: merge(child.props.style, child.props.formatStyle[currentFormat], constraints) 
           });
@@ -357,7 +442,10 @@ AutoLayout.propTypes = {
         React.PropTypes.arrayOf(React.PropTypes.number),
         React.PropTypes.string
       ]).isRequired,
-      format: React.PropTypes.arrayOf(React.PropTypes.string).isRequired
+      format: React.PropTypes.oneOfType([
+        React.PropTypes.arrayOf(React.PropTypes.string),
+        React.PropTypes.string
+      ]).isRequired
     })
   ).isRequired,
   htmlTag: React.PropTypes.string,
