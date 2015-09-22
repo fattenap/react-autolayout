@@ -63,10 +63,11 @@ function updateContraints(viewConfig, currentFormat, currentStyles) {
   let constrainToIsFixed = viewConfig.layouts[currentFormat].constrainToIsFixed;
   let viewport = {};
   let colors = {};
+  let shapes = {};
   let widths = {};
   let heights = {};
   let w, h; //width, height
-  
+
   if ('spacing' in viewConfig.layouts[currentFormat].metaInfo) {
     viewConfig.view.setSpacing(viewConfig.layouts[currentFormat].metaInfo.spacing);
   }
@@ -85,6 +86,10 @@ function updateContraints(viewConfig, currentFormat, currentStyles) {
 
   if ('heights' in viewConfig.layouts[currentFormat].metaInfo) {
     heights = viewConfig.layouts[currentFormat].metaInfo.heights;
+  }
+
+  if ('shapes' in viewConfig.layouts[currentFormat].metaInfo) {
+    shapes = viewConfig.layouts[currentFormat].metaInfo.shapes;
   }
 
   if (constrainToIsFixed){
@@ -149,6 +154,7 @@ function updateContraints(viewConfig, currentFormat, currentStyles) {
         //intrinsic width
       } else {
         layoutConstraints[viewConfig.viewName][subViewKey].style.width = widths[subViewKey];
+        layoutConstraints[viewConfig.viewName][subViewKey].width = widths[subViewKey];
       }
     }
     if (subViewKey in heights){
@@ -157,6 +163,14 @@ function updateContraints(viewConfig, currentFormat, currentStyles) {
         //intrinsic height
       } else {
         layoutConstraints[viewConfig.viewName][subViewKey].style.height = heights[subViewKey];
+        layoutConstraints[viewConfig.viewName][subViewKey].height = heights[subViewKey];
+      }
+    }
+    if (subViewKey in shapes){
+      if (shapes[subViewKey] === 'circle'){
+        layoutConstraints[viewConfig.viewName][subViewKey].style.borderRadius = '50%';
+        layoutConstraints[viewConfig.viewName][subViewKey].style.width = layoutConstraints[viewConfig.viewName][subViewKey].style.height;
+        layoutConstraints[viewConfig.viewName][subViewKey].width = layoutConstraints[viewConfig.viewName][subViewKey].style.height;
       }
     }
   };
