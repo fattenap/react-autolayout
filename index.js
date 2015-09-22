@@ -1,5 +1,5 @@
 import './styles.css';
-import autolayout from './node_modules/autolayout/dist/autolayout.kiwi.js';
+import AutoLayout from './node_modules/autolayout/dist/autolayout.kiwi.js';
 import React from 'react';
 
 let listeners = {};
@@ -185,7 +185,7 @@ function updateLayout(e, viewName, applyStyle) {
     current = configArr[i].query(constraints, configArr[i].currentFormat) || {};
     if(current.format !== void(0)){    
       if (configArr[i].currentFormat !== current.format){
-        configArr[i].view = new autolayout.View();
+        configArr[i].view = new AutoLayout.View();
         configArr[i].view.addConstraints(configArr[i].layouts[current.format].constraints);
       }
       configArr[i].currentFormat = current.format;
@@ -345,11 +345,11 @@ function addVisualFormat(component, descriptor){
       config[viewName].layouts[layout.name].constrainToIsFixed = false;
       config[viewName].layouts[layout.name].constrainTo = layout.constrainTo.split('.');
     }
-    config[viewName].layouts[layout.name].constraints = autolayout.VisualFormat.parse(layout.format, {extended: true});
-    config[viewName].layouts[layout.name].metaInfo = autolayout.VisualFormat.parseMetaInfo ? autolayout.VisualFormat.parseMetaInfo(layout.format) : {};
+    config[viewName].layouts[layout.name].constraints = AutoLayout.VisualFormat.parse(layout.format, {extended: true});
+    config[viewName].layouts[layout.name].metaInfo = AutoLayout.VisualFormat.parseMetaInfo ? AutoLayout.VisualFormat.parseMetaInfo(layout.format) : {};
   };
 
-  config[viewName].view = new autolayout.View();
+  config[viewName].view = new AutoLayout.View();
   config[viewName].view.addConstraints(config[viewName].layouts[config[viewName].currentFormat].constraints);
   constraints = merge(constraints, updateContraints(config[viewName], config[viewName].currentFormat, config[viewName].currentStyles));
 
@@ -412,7 +412,7 @@ function getCurrentFormat(viewName){
 window.addEventListener('resize', updateLayout);
 
 //Layout Component
-export default class AutoLayout extends React.Component {
+export default class Viewport extends React.Component {
   constructor(props){
     super(props);
   }
@@ -422,6 +422,15 @@ export default class AutoLayout extends React.Component {
       query: this.props.query,
       layouts: this.props.layout
     });
+  }
+
+  componentDidMount(){
+    // addVisualFormat(this, {
+    //   query: this.props.query,
+    //   layouts: this.props.layout
+    // });
+    let u = this;
+    console.log(this.refs);
   }
   
   componentWillUnmount() {
@@ -451,7 +460,7 @@ export default class AutoLayout extends React.Component {
   }
 }
 
-AutoLayout.propTypes = {
+Viewport.propTypes = {
   name: React.PropTypes.string.isRequired,
   query: React.PropTypes.func,
   layout: React.PropTypes.oneOfType([
