@@ -68,7 +68,7 @@ function getViewportDimensions(viewport, w, h){
   return [w, h];
 }
 
-function updateContraints(viewConfig, currentFormat/*, currentStyles*/) {
+function updateContraints(viewConfig, currentFormat) {
   let layoutConstraints = {};
   let subView;
   let constrainTo = viewConfig.layouts[currentFormat].constrainTo;
@@ -168,10 +168,10 @@ function updateContraints(viewConfig, currentFormat/*, currentStyles*/) {
         style: {
           width: subView.width, 
           height: subView.height,
-          top: subView.top,
-          left: subView.left,
+          // top: subView.top,
+          // left: subView.left,
           zIndex: subView.zIndex * 5,
-          // transform: `translate3d(${subView.left}px, ${subView.top}px, 0)`,
+          transform: `translate3d(${subView.left}px, ${subView.top}px, 0)`,
           position: 'absolute',
           margin: 0,
           padding: 0
@@ -183,9 +183,7 @@ function updateContraints(viewConfig, currentFormat/*, currentStyles*/) {
         zIndex: subView.zIndex * 5,
       };
     }
-    // if(currentStyles !== void(0) && subViewKey in currentStyles){
-    //   layoutConstraints[viewConfig.viewName][subViewKey].style = merge(currentStyles[subViewKey], layoutConstraints[viewConfig.viewName][subViewKey].style);
-    // }
+
     if (subViewKey in colors){
       layoutConstraints[viewConfig.viewName][subViewKey].style.backgroundColor = colors[subViewKey];
     }
@@ -220,18 +218,18 @@ function updateContraints(viewConfig, currentFormat/*, currentStyles*/) {
 
 function updateLayout(e, viewName, applyStyle) {
 
-  let current; 
+  let currentFormat; 
 
   for (let i = 0, l = configArr.length; i < l; i++) {
-    current = configArr[i].query(constraints, configArr[i].currentFormat) || {};
-    if(current.format !== void(0)){    
-      if (configArr[i].currentFormat !== current.format){
+    currentFormat = configArr[i].query(constraints, configArr[i].currentFormat);
+    if(currentFormat !== void(0)){    
+      if (configArr[i].currentFormat !== currentFormat){
         configArr[i].view = new AutoLayout.View();
-        configArr[i].view.addConstraints(configArr[i].layouts[current.format].constraints);
+        configArr[i].view.addConstraints(configArr[i].layouts[currentFormat].constraints);
       }
-      configArr[i].currentFormat = current.format;
+      configArr[i].currentFormat = currentFormat;
     }
-    constraints = merge(constraints, updateContraints(configArr[i], configArr[i].currentFormat, current.styles));
+    constraints = merge(constraints, updateContraints(configArr[i], configArr[i].currentFormat));
   };
 
   for (let k3 in listeners){
@@ -369,7 +367,7 @@ function captureBorderDimensions(style, defaultWidth, defaultHeight){
 
 function addVisualFormat(component, descriptor){
   let viewName = component.props.name;
-  let current;
+  let currentFormat;
 
   invariant(viewName === void(0), 'name is required!');
   invariant((viewName in config), `${viewName} name must be unique.`);
@@ -388,13 +386,13 @@ function addVisualFormat(component, descriptor){
       borders[viewName][child.props.name].borderHeight = height;
     }
   
-    if ('formatStyle' in child.props){
+    if ('layoutStyle' in child.props){
       borders[viewName][child.props.name].format = borders[viewName][child.props.name].format || {};
-      for (let k in child.props.formatStyle){
-        if (child.props.formatStyle.hasOwnProperty(k)){
+      for (let k in child.props.layoutStyle){
+        if (child.props.layoutStyle.hasOwnProperty(k)){
           borders[viewName][child.props.name].format[k] = {};
           
-          let {width, height} = captureBorderDimensions(child.props.formatStyle[k], 
+          let {width, height} = captureBorderDimensions(child.props.layoutStyle[k], 
             borders[viewName][child.props.name].borderWidth,
             borders[viewName][child.props.name].borderHeight);
           
@@ -411,19 +409,17 @@ function addVisualFormat(component, descriptor){
   };
 
   /*
-    If descriptor.layouts is not an Array it is assumed that an object has been passed. If an object has been passed then
-    'query' is optional. However 'query' can still be used to set styles without referencing a format.
+    If descriptor.layouts is not an Array it is assumed that an object. 'query' is optional.
   */
   let layouts = Array.isArray(descriptor.layouts) ? descriptor.layouts : [descriptor.layouts];
 
   config[viewName] = {};
   config[viewName].layouts = {};
-  config[viewName].query = descriptor.query || () => {}; //If no query then just get an object.
+  config[viewName].query = descriptor.query || () => void(0); //If no query then just return void(0).
   config[viewName].viewName = viewName;
 
-  current = config[viewName].query(constraints) || {};
-  config[viewName].currentFormat = current.format || layouts[0].name; //If format undefined then 'query' sets styles only.
-  config[viewName].currentStyles = current.styles;
+  currentFormat = config[viewName].query(constraints);
+  config[viewName].currentFormat = currentFormat || layouts[0].name;
 
   for (let i = 0, len = layouts.length; i < len; i++) {
     let layout = layouts[i];
@@ -443,12 +439,12 @@ function addVisualFormat(component, descriptor){
 
   config[viewName].view = new AutoLayout.View();
   config[viewName].view.addConstraints(config[viewName].layouts[config[viewName].currentFormat].constraints);
-  constraints = merge(constraints, updateContraints(config[viewName], config[viewName].currentFormat, config[viewName].currentStyles));
+  constraints = merge(constraints, updateContraints(config[viewName], config[viewName].currentFormat));
 
   configArr.push(config[viewName]);
 
   for (let i = 0, l = configArr.length; i < l; i++) {
-    constraints = merge(constraints, updateContraints(configArr[i], configArr[i].currentFormat, configArr[i].currentStyles));
+    constraints = merge(constraints, updateContraints(configArr[i], configArr[i].currentFormat));
   };
 
   updateLayout();
@@ -482,8 +478,8 @@ function removeVisualFormat(viewName){
   
 }
 
-function getContraints(viewName, regionName){
-  let viewKey = !!viewName && !!regionName ? view.props.name : void(0);
+function getContraints(viewName, region){
+  let viewKey = !!viewName && !!region ? region.props.name : void(0);
   if (viewKey === void(0) ||
     !(viewName in constraints) || 
     !(viewKey in constraints[viewName])){
@@ -503,17 +499,12 @@ function getCurrentFormat(viewName){
 
 window.addEventListener('resize', updateLayout);
 
-//Region Component
-export class Region extends React.Component {
-  constructor(props){
-    super(props);
-  }
-
-  render(){
-    let htmlTag = this.props.htmlTag || 'div';
-    return React.createElement(htmlTag, this.props);
-  }
+let Region = (props) => {
+  let htmlTag = props.htmlTag || 'div';
+  return React.createElement(htmlTag, props);
 }
+
+export { Region };
 
 //Viewport Component
 export class Viewport extends React.Component {
@@ -548,11 +539,11 @@ export class Viewport extends React.Component {
         return child;
       }
 
-      if ('formatStyle' in child.props){
+      if ('layoutStyle' in child.props){
         let currentFormat = getCurrentFormat(viewName);
-        if (currentFormat !== void(0) && (currentFormat in child.props.formatStyle)){
+        if (currentFormat !== void(0) && (currentFormat in child.props.layoutStyle)){
           return React.cloneElement(child, { 
-            style: merge(child.props.style, child.props.formatStyle[currentFormat], constraints) 
+            style: merge(child.props.style, child.props.layoutStyle[currentFormat], constraints) 
           });
         }
       }
