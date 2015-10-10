@@ -17,9 +17,10 @@ function invariant(cond, message) {
 
 function  merge() {
   let a = {};
-  Array.prototype.slice.call(arguments).forEach(function(x) {
+  Array.prototype.slice.call(arguments).forEach(function(x, idx) {
     for (let k in x) {
-      if (!x.hasOwnProperty(k)) {
+      if (!x.hasOwnProperty(k) || 
+        (idx > 0 && (k === 'position' || k === 'margin' || k === 'padding'))) {
         continue;
       }
       if(typeof x[k] === 'function'){
@@ -168,8 +169,6 @@ function updateContraints(viewConfig, currentFormat) {
         style: {
           width: subView.width, 
           height: subView.height,
-          // top: subView.top,
-          // left: subView.left,
           zIndex: subView.zIndex * 5,
           transform: `translate3d(${subView.left}px, ${subView.top}px, 0)`,
           position: 'absolute',
@@ -543,11 +542,11 @@ export class Viewport extends React.Component {
         let currentFormat = getCurrentFormat(viewName);
         if (currentFormat !== void(0) && (currentFormat in child.props.layoutStyle)){
           return React.cloneElement(child, { 
-            style: merge(child.props.style, child.props.layoutStyle[currentFormat], constraints) 
+            style: merge(constraints, child.props.style, child.props.layoutStyle[currentFormat]) 
           });
         }
       }
-      return React.cloneElement(child, { style: merge(child.props.style, constraints) });
+      return React.cloneElement(child, { style: merge(constraints, child.props.style) });
     });
     return React.createElement(htmlTag, null, newChildren);
   }
