@@ -477,14 +477,14 @@ function removeVisualFormat(viewName){
   
 }
 
-function getContraints(viewName, region){
-  let viewKey = !!viewName && !!region ? region.props.name : void(0);
+export function getContraints(viewName, regionName){
+  let viewKey = !!viewName && !!regionName ? regionName : void(0);
   if (viewKey === void(0) ||
     !(viewName in constraints) || 
     !(viewKey in constraints[viewName])){
     return void(0);
   }
-  return constraints[viewName][viewKey].style;
+  return constraints[viewName][viewKey];
 }
 
 function getCurrentFormat(viewName){ 
@@ -531,7 +531,7 @@ export class Viewport extends React.Component {
         return child;
       }
 
-      let constraints = getContraints(viewName, child);
+      let constraints = getContraints(viewName, child.props.name);
       
       //check to see if the element was specified in the layout.
       if (constraints === void(0)) {
@@ -542,11 +542,11 @@ export class Viewport extends React.Component {
         let currentFormat = getCurrentFormat(viewName);
         if (currentFormat !== void(0) && (currentFormat in child.props.layoutStyle)){
           return React.cloneElement(child, { 
-            style: merge(constraints, child.props.style, child.props.layoutStyle[currentFormat]) 
+            style: merge(constraints.style, child.props.style, child.props.layoutStyle[currentFormat]) 
           });
         }
       }
-      return React.cloneElement(child, { style: merge(constraints, child.props.style) });
+      return React.cloneElement(child, { style: merge(constraints.style, child.props.style) });
     });
     return React.createElement(htmlTag, null, newChildren);
   }
