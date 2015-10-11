@@ -69,11 +69,11 @@ function getViewportDimensions(viewport, w, h){
   return [w, h];
 }
 
-function updateContraints(viewConfig, currentFormat) {
+function updateContraints(viewConfig, currentLayout) {
   let layoutConstraints = {};
   let subView;
-  let constrainTo = viewConfig.layouts[currentFormat].constrainTo;
-  let constrainToIsFixed = viewConfig.layouts[currentFormat].constrainToIsFixed;
+  let constrainTo = viewConfig.layouts[currentLayout].constrainTo;
+  let constrainToIsFixed = viewConfig.layouts[currentLayout].constrainToIsFixed;
   let viewport = {};
   let colors = {};
   let shapes = {};
@@ -111,33 +111,33 @@ function updateContraints(viewConfig, currentFormat) {
    * @param {Number|Array} spacing
    */
 
-  if ('spacing' in viewConfig.layouts[currentFormat].metaInfo) {
-    viewConfig.view.setSpacing(viewConfig.layouts[currentFormat].metaInfo.spacing);
+  if ('spacing' in viewConfig.layouts[currentLayout].metaInfo) {
+    viewConfig.view.setSpacing(viewConfig.layouts[currentLayout].metaInfo.spacing);
   }
 
-  if ('viewport' in viewConfig.layouts[currentFormat].metaInfo) {
-    viewport = viewConfig.layouts[currentFormat].metaInfo.viewport;
+  if ('viewport' in viewConfig.layouts[currentLayout].metaInfo) {
+    viewport = viewConfig.layouts[currentLayout].metaInfo.viewport;
   }
 
-  if ('colors' in viewConfig.layouts[currentFormat].metaInfo) {
-    colors = viewConfig.layouts[currentFormat].metaInfo.colors;
+  if ('colors' in viewConfig.layouts[currentLayout].metaInfo) {
+    colors = viewConfig.layouts[currentLayout].metaInfo.colors;
   }
 
-  if ('widths' in viewConfig.layouts[currentFormat].metaInfo) {
-    widths = viewConfig.layouts[currentFormat].metaInfo.widths;
+  if ('widths' in viewConfig.layouts[currentLayout].metaInfo) {
+    widths = viewConfig.layouts[currentLayout].metaInfo.widths;
   }
 
-  if ('heights' in viewConfig.layouts[currentFormat].metaInfo) {
-    heights = viewConfig.layouts[currentFormat].metaInfo.heights;
+  if ('heights' in viewConfig.layouts[currentLayout].metaInfo) {
+    heights = viewConfig.layouts[currentLayout].metaInfo.heights;
   }
 
-  if ('shapes' in viewConfig.layouts[currentFormat].metaInfo) {
-    shapes = viewConfig.layouts[currentFormat].metaInfo.shapes;
+  if ('shapes' in viewConfig.layouts[currentLayout].metaInfo) {
+    shapes = viewConfig.layouts[currentLayout].metaInfo.shapes;
   }
 
   if (constrainToIsFixed){
     [w, h] = getViewportDimensions(viewport, constrainTo[0], constrainTo[1]);
-  } else if (viewConfig.layouts[currentFormat].constrainTo[0] == 'viewport' || !(constrainTo[0] in constraints)){
+  } else if (viewConfig.layouts[currentLayout].constrainTo[0] == 'viewport' || !(constrainTo[0] in constraints)){
     [w, h] = getViewportDimensions(viewport, window.innerWidth, window.innerHeight);
   } else {
     
@@ -150,9 +150,9 @@ function updateContraints(viewConfig, currentFormat) {
     let borderHeight = borders[constrainToViewName][constrainToViewKey].borderHeight;
 
     if (('format' in  borders[constrainToViewName][constrainToViewKey]) &&
-        currentFormat in borders[constrainToViewName][constrainToViewKey].format){
-      borderWidth = borders[constrainToViewName][constrainToViewKey].format[currentFormat].borderWidth;
-      borderHeight = borders[constrainToViewName][constrainToViewKey].format[currentFormat].borderHeight;
+        currentLayout in borders[constrainToViewName][constrainToViewKey].format){
+      borderWidth = borders[constrainToViewName][constrainToViewKey].format[currentLayout].borderWidth;
+      borderHeight = borders[constrainToViewName][constrainToViewKey].format[currentLayout].borderHeight;
     }
     
     [w, h] = getViewportDimensions(viewport, style.width - borderWidth, style.height - borderHeight);
@@ -160,7 +160,7 @@ function updateContraints(viewConfig, currentFormat) {
 
   viewConfig.view.setSize(w, h);
   layoutConstraints[viewConfig.viewName] = {};
-  layoutConstraints[viewConfig.viewName].currentFormat = currentFormat;
+  layoutConstraints[viewConfig.viewName].currentLayout = currentLayout;
   
   for (let subViewKey in viewConfig.view.subViews) {
     if (viewConfig.view.subViews.hasOwnProperty(subViewKey) && subViewKey[0] !== "_"){
@@ -180,6 +180,7 @@ function updateContraints(viewConfig, currentFormat) {
         width: subView.width, 
         height: subView.height,
         zIndex: subView.zIndex * 5,
+        currentLayout: currentLayout
       };
     }
 
@@ -217,18 +218,18 @@ function updateContraints(viewConfig, currentFormat) {
 
 function updateLayout(e, viewName, applyStyle) {
 
-  let currentFormat; 
+  let currentLayout; 
 
   for (let i = 0, l = configArr.length; i < l; i++) {
-    currentFormat = configArr[i].query(constraints, configArr[i].currentFormat);
-    if(currentFormat !== void(0)){    
-      if (configArr[i].currentFormat !== currentFormat){
+    currentLayout = configArr[i].query(constraints);
+    if(currentLayout !== void(0)){    
+      if (configArr[i].currentLayout !== currentLayout){
         configArr[i].view = new AutoLayout.View();
-        configArr[i].view.addConstraints(configArr[i].layouts[currentFormat].constraints);
+        configArr[i].view.addConstraints(configArr[i].layouts[currentLayout].constraints);
       }
-      configArr[i].currentFormat = currentFormat;
+      configArr[i].currentLayout = currentLayout;
     }
-    constraints = merge(constraints, updateContraints(configArr[i], configArr[i].currentFormat));
+    constraints = merge(constraints, updateContraints(configArr[i], configArr[i].currentLayout));
   };
 
   for (let k3 in listeners){
@@ -366,7 +367,7 @@ function captureBorderDimensions(style, defaultWidth, defaultHeight){
 
 function addVisualFormat(component, descriptor){
   let viewName = component.props.name;
-  let currentFormat;
+  let currentLayout;
 
   invariant(viewName === void(0), 'name is required!');
   invariant((viewName in config), `${viewName} name must be unique.`);
@@ -417,8 +418,8 @@ function addVisualFormat(component, descriptor){
   config[viewName].query = descriptor.query || () => void(0); //If no query then just return void(0).
   config[viewName].viewName = viewName;
 
-  currentFormat = config[viewName].query(constraints);
-  config[viewName].currentFormat = currentFormat || layouts[0].name;
+  currentLayout = config[viewName].query(constraints);
+  config[viewName].currentLayout = currentLayout || layouts[0].name;
 
   for (let i = 0, len = layouts.length; i < len; i++) {
     let layout = layouts[i];
@@ -437,13 +438,13 @@ function addVisualFormat(component, descriptor){
   };
 
   config[viewName].view = new AutoLayout.View();
-  config[viewName].view.addConstraints(config[viewName].layouts[config[viewName].currentFormat].constraints);
-  constraints = merge(constraints, updateContraints(config[viewName], config[viewName].currentFormat));
+  config[viewName].view.addConstraints(config[viewName].layouts[config[viewName].currentLayout].constraints);
+  constraints = merge(constraints, updateContraints(config[viewName], config[viewName].currentLayout));
 
   configArr.push(config[viewName]);
 
   for (let i = 0, l = configArr.length; i < l; i++) {
-    constraints = merge(constraints, updateContraints(configArr[i], configArr[i].currentFormat));
+    constraints = merge(constraints, updateContraints(configArr[i], configArr[i].currentLayout));
   };
 
   updateLayout();
@@ -487,13 +488,13 @@ export function getContraints(viewName, regionName){
   return constraints[viewName][viewKey];
 }
 
-function getCurrentFormat(viewName){ 
+function getCurrentLayout(viewName){ 
   if (viewName === void(0) || 
     viewName === null || 
     !(viewName in constraints)){
     return void(0);
   }
-  return constraints[viewName].currentFormat;
+  return constraints[viewName].currentLayout;
 }
 
 window.addEventListener('resize', updateLayout);
@@ -539,10 +540,10 @@ export class Viewport extends React.Component {
       }
 
       if ('layoutStyle' in child.props){
-        let currentFormat = getCurrentFormat(viewName);
-        if (currentFormat !== void(0) && (currentFormat in child.props.layoutStyle)){
+        let currentLayout = getCurrentLayout(viewName);
+        if (currentLayout !== void(0) && (currentLayout in child.props.layoutStyle)){
           return React.cloneElement(child, { 
-            style: merge(constraints.style, child.props.style, child.props.layoutStyle[currentFormat]) 
+            style: merge(constraints.style, child.props.style, child.props.layoutStyle[currentLayout]) 
           });
         }
       }
