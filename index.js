@@ -137,7 +137,7 @@ function updateContraints(viewConfig, currentLayout) {
 
   if (constrainToIsFixed){
     [w, h] = getViewportDimensions(viewport, constrainTo[0], constrainTo[1]);
-  } else if (viewConfig.layouts[currentLayout].constrainTo[0] == 'viewport' || !(constrainTo[0] in constraints)){
+  } else if (constrainTo == void(0) || viewConfig.layouts[currentLayout].constrainTo[0] == 'viewport' || !(constrainTo[0] in constraints)){
     [w, h] = getViewportDimensions(viewport, window.innerWidth, window.innerHeight);
   } else {
     
@@ -427,11 +427,15 @@ function addVisualFormat(component, descriptor){
     config[viewName].layouts[layout.name].htmlTag = layout.htmlTag;
     if (Array.isArray(layout.constrainTo)){
       config[viewName].layouts[layout.name].constrainToIsFixed = true;
-      config[viewName].layouts[layout.name].constrainTo = layout.constrainTo;
+      if ('constrainTo' in config[viewName].layouts[layout.name]) {
+        config[viewName].layouts[layout.name].constrainTo = layout.constrainTo;
+      }
     } else {
       //assume it is a string
       config[viewName].layouts[layout.name].constrainToIsFixed = false;
-      config[viewName].layouts[layout.name].constrainTo = layout.constrainTo.split('.');
+      if ('constrainTo' in config[viewName].layouts[layout.name]) {
+        config[viewName].layouts[layout.name].constrainTo = layout.constrainTo.split('.');
+      }
     }
     config[viewName].layouts[layout.name].constraints = AutoLayout.VisualFormat.parse(layout.format, {extended: true});
     config[viewName].layouts[layout.name].metaInfo = AutoLayout.VisualFormat.parseMetaInfo ? AutoLayout.VisualFormat.parseMetaInfo(layout.format) : {};
@@ -566,7 +570,7 @@ Viewport.propTypes = {
       constrainTo: React.PropTypes.oneOfType([
         React.PropTypes.arrayOf(React.PropTypes.number),
         React.PropTypes.string
-      ]).isRequired,
+      ]),
       format: React.PropTypes.oneOfType([
         React.PropTypes.arrayOf(React.PropTypes.string),
         React.PropTypes.string
