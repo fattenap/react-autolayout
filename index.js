@@ -479,13 +479,17 @@ function removeVisualFormat(viewName){
 }
 
 export function getContraints(viewName, regionName){
-  let viewKey = !!viewName && !!regionName ? regionName : void(0);
-  if (viewKey === void(0) ||
-    !(viewName in constraints) || 
-    !(viewKey in constraints[viewName])){
+  if(viewName !== void(0)){
+    [viewName, regionName] = viewName.indexOf(".") === -1 ? [viewName, regionName] : viewName.split(".");
+  } else {
     return void(0);
   }
-  return constraints[viewName][viewKey];
+  if (regionName === void(0) ||
+    !(viewName in constraints) || 
+    !(regionName in constraints[viewName])){
+    return void(0);
+  }
+  return constraints[viewName][regionName];
 }
 
 function getCurrentLayout(viewName){ 
